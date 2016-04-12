@@ -1,0 +1,171 @@
+---
+title: "easyformatr"
+author: "Brandon Taylor"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{easyformatr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Import the package. We will also make heavy usage of magrittr for chaining, dplyr for filtering, and knitr for printing.
+
+```{r, message = FALSE}
+library(easyformatr)
+library(magrittr)
+library(dplyr)
+library(knitr)
+```
+
+# Base Components
+Let's see what kind of componenets we can use in our time formats. This can be done by filtering the format info table.
+
+## Times
+
+```{r}
+filter_info(type == "time" & component == "base")
+```
+
+## Numbers
+
+```{r}
+filter_info(type == "number" & component == "base")
+```
+
+Each of these base components can be used in a formats.
+
+```{r}
+easy_format(year, month, day, integer, octal, double)
+```
+
+# Mutant documentation
+Each base component can be modified in special ways. 
+
+## Time 
+Each time base can be modified in different ways. Let's look at ways to modify second:
+
+```{r}
+filter_info(type == "time" & component == "mutant" & base == "second")
+```
+
+Along the top, you can see the names of flags and options. Flags change logical variables, and options change numeric variables.
+
+## Numbers
+It is slightly easier to see modifiers for numbers because there is a fixed set.
+
+### Flags
+
+```{r}
+filter_info(type == "number" & component == "flag")
+```
+
+### Options
+
+```{r}
+filter_info(type == "number" & component == "option")
+```
+
+# Transformations
+
+To transform a base into a mutant, you must use a flag or option function. These functions take two arguments. The first is an object to modify:
+
+```{r}
+easy_format(second %>% decimal)
+```
+
+or a list of objects to modify:
+```{r}
+easy_format(list(integer, 
+                 double) %>% 
+              always_decimal)
+```
+
+or even a nested list of objects to modify
+
+```{r}
+easy_format(list(month, 
+                 list(day,
+                      minute) ) %>% 
+            roman)
+```
+
+In the case of times, flags or options that aren't relevant to a particular base (that is, aren't listed in the mutant table for a particular base) have no effect. Flags and options always have an effect on numbers.
+
+```{r}
+easy_format(second %>% roman) ==
+  easy_format(second)
+```
+
+## The second argument
+The second argument of a transformation is what to change the value to.
+
+### Flags
+
+For flags, the second argument defaults to true.
+ 
+```{r}
+easy_format(second %>% decimal) == 
+  easy_format(second %>% decimal(TRUE) )
+```
+
+Flags can be undone by resetting the value to NA.
+
+```{r}
+easy_format(second %>% 
+              decimal %>% 
+              decimal(NA) ) ==
+  easy_format(second)
+```
+
+### Options
+
+For options, this second value defaults to NA. So options will have no effect if no number is chosen.
+
+```{r}
+easy_format(double %>% before_decimal) == 
+  easy_format(double)
+```
+
+Options can be turned of by resetting them to NA
+
+```{r}
+easy_format(double %>% before_decimal(3) %>% before_decimal) == 
+  easy_format(double)
+```
+
+## Errors
+For times, it is possible to specify a mutant that has no corresponding code. For example,
+```{r, error = TRUE}
+easy_format(second %>%
+              decimal %>%
+              digits(1) ) 
+```
+
+# Strings
+
+Easy format leaves strings unchanged. However, percentage signs will be doubled.
+```{r}
+easy_format("We are the 99%")
+```
+
+This only happens once.
+```{r}
+easy_format(easy_format("We are the 99%") )
+```
+
+Modifications also leave strings unchanged.
+
+```{r}
+easy_format(roman("I am Spartacus"))
+```
+
+There is an optional sep argument that defaults to `""`, but can be changed.
+
+```{r}
+easy_format("We", "are", "the 99%", sep = " ")
+```
+
+# More Info
+For more information, codes can be looked up in the `?strptime` and the `?sprintf` documentation. Note that many formats are possible to build but will not work when used.
+
