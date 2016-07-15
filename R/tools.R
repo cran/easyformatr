@@ -1,4 +1,4 @@
-utils::globalVariables(c('type', 'ID', 'final_code', '.', 'name', 'code', 'value', 'use_input', 'input_dollar', 'whole_flag', 'before_decimal', 'after_decimal', 'n', 'variable', '.id', '.result', 'base', 'one_of'))
+utils::globalVariables(c('type', 'ID', 'final_code', '.', 'name', 'code', 'value', 'use_input', 'input_dollar', 'whole_flag', 'before_decimal', 'after_decimal', 'n', 'variable', '.id', '.result', 'base'))
 
 #' @importFrom magrittr %>%
 #' @export
@@ -15,6 +15,7 @@ parse_binding_errors = function(string)
   paste(collapse = ", ") %>%
   paste0("utils::globalVariables(c(", . , "))")
 
+#' @export
 #' @title Will paste, omitting all NA values
 #' @param ... See paste documentation
 #' @param sep See paste documentation
@@ -23,11 +24,8 @@ parse_binding_errors = function(string)
 paste_NA_omit = function(... , sep = "", collapse = NULL) {
   data =
     list(...) %>%
-    do.call("data_frame" %>% utils::getFromNamespace("dplyr"), . ) %>%
-    stats::setNames(1:ncol(.))
-
-  if (".id" %in% names(data))
-    stop(".id not allowed as a column name")
+    stats::setNames(1:length(.)) %>%
+    tibble::as_tibble()
 
   vector =
     data %>%
@@ -41,6 +39,7 @@ paste_NA_omit = function(... , sep = "", collapse = NULL) {
   if (collapse %>% is.null) vector else vector %>% paste(collapse = collapse)
 }
 
+#' @export
 #' @title Will paste. Anything pasted to NA will return NA
 #' @param ... See paste documentation
 #' @param sep See paste documentation
@@ -50,21 +49,20 @@ paste_NA_poison = function(..., sep = "", collapse = NULL) {
 
   data =
     list(...) %>%
-    do.call("data_frame" %>% utils::getFromNamespace("dplyr"), . )
-
-  if (".result" %in% names(data))
-    stop(".result not allowed as a column name")
+    stats::setNames(1:length(.)) %>%
+    tibble::as_tibble()  %>%
+    dplyr::mutate(.id = 1:n())
 
   vector =
     data %>%
-    dplyr::mutate(.result =
-                    as.list(.) %>%
-                    c(sep = sep) %>%
-                    do.call("paste", .),
-                  .result =
-                    stats::complete.cases(.) %>%
-                    ifelse(.result, NA)) %>%
-    magrittr::use_series(.result)
+    tidyr::gather(variable, value, -.id) %>%
+    dplyr::group_by(.id) %>%
+    dplyr::filter(value %>% is.na %>% any %>% `!`) %>%
+    dplyr::summarize(value = paste(value, collapse = sep)) %>%
+    dplyr::right_join(data) %>%
+    magrittr::use_series(value)
+
+  if (collapse %>% is.null) vector else vector %>% paste(collapse = collapse)
 
   if (collapse %>% is.null) vector else
     if (NA %in% vector) NA else

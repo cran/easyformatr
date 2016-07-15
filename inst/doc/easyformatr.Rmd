@@ -149,6 +149,11 @@ Easy format leaves strings unchanged. However, percentage signs will be doubled.
 easy_format("We are the 99%")
 ```
 
+This only happens once.
+```{r}
+easy_format(easy_format("We are the 99%") )
+```
+
 Modifications also leave strings unchanged.
 
 ```{r}

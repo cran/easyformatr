@@ -28,10 +28,10 @@ easy_format(list(double %>%
                    "1%",
                    double %>% 
                      left_justify) %>%
-                use_input(value = 1) %>%
+                use_input(1) %>%
                 always_sign %>%
-                before_decimal(value = 3) %>%
-                after_decimal(value = 0),
+                before_decimal(3) %>%
+                after_decimal(0),
               sep = " and ")
 ```
 
@@ -50,7 +50,7 @@ easy_format(list(year %>% religious,
                  minute) %>%
               roman,
             ":",
-            second %>% digits(value = 3),
+            second %>% digits(3),
             
             " ",
             am_pm,

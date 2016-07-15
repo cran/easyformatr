@@ -123,7 +123,7 @@ time_table_to_final_table = function(time_table)
         dplyr::intersect(names(one_base_df))
 
       one_base_df %>%
-        dplyr::select(one_of(relevant_columns))
+        dplyr::select(dplyr::one_of(relevant_columns))
     }
 
     almost_there =
